@@ -14,17 +14,25 @@ import {catchError, map, startWith, switchMap} from 'rxjs/operators';
   templateUrl: 'table-http-example.html',
 })
 export class TableHttpExample implements AfterViewInit {
-  displayedColumns: string[] = ['created', 'state', 'number', 'title'];
+  //displayedColumns: string[] = ['created', 'state', 'number', 'title'];
   exampleDatabase: ExampleHttpDatabase | null;
-  data: GithubIssue[] = [];
+  data: Object[] = [];
 
   resultsLength = 0;
   isLoadingResults = true;
-  isRateLimitReached = false;
 
   @ViewChild(MatPaginator, {static: false}) paginator: MatPaginator;
   @ViewChild(MatSort, {static: false}) sort: MatSort;
+  
+  columns = [
+    { columnDef: 'position', header: 'No.',    cell: (element: any) => `${element.position}` },
+    { columnDef: 'name',     header: 'Name',   cell: (element: any) => `${element.name}`     },
+    { columnDef: 'weight',   header: 'Weight', cell: (element: any) => `${element.weight}`   },
+    { columnDef: 'symbol',   header: 'Symbol', cell: (element: any) => `${element.symbol}`   },
+  ];
 
+  /** Column definitions in order */
+  displayedColumns = this.columns.map(x => x.columnDef);
   constructor(private _httpClient: HttpClient) {}
 
   ngAfterViewInit() {
@@ -44,47 +52,53 @@ export class TableHttpExample implements AfterViewInit {
         map(data => {
           // Flip flag to show that loading has finished.
           this.isLoadingResults = false;
-          this.isRateLimitReached = false;
-          this.resultsLength = data.total_count;
-
-          return data.items;
+          this.resultsLength = data.length;
+          //this.displayedColumns = data[0].keys;
+          this.columns = []
+          console.log(Object.keys(data[0]))
+          for (let entry of Object.keys(data[0])) {
+            this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
+          }
+          console.log(this.columns)
+          this.displayedColumns = this.columns.map(x => x.columnDef);
+          this.displayedColumns = Object.keys(data[0]);
+          return removeArraysFromObjs(data);
         }),
         catchError(() => {
           this.isLoadingResults = false;
-          // Catch if the GitHub API has reached its rate limit. Return empty data.
-          this.isRateLimitReached = true;
           return observableOf([]);
         })
       ).subscribe(data => this.data = data);
   }
 }
 
-export interface GithubApi {
-  items: GithubIssue[];
-  total_count: number;
+var removeArraysFromObjs = function(arr) {
+  var no_arr_objs = []
+  arr.forEach(function (elem) {
+      no_arr_objs.push(removeArraysFromObj(elem));
+  })
+  return no_arr_objs
 }
 
-export interface GithubIssue {
-  created_at: string;
-  number: string;
-  state: string;
-  title: string;
+var removeArraysFromObj = function (obj) {
+  var noArrayObj = {}
+  for (var prop in obj) {
+    if (!Array.isArray(obj[prop]))
+    {
+      noArrayObj[prop] = obj[prop]
+    }
+  }
+  return noArrayObj
 }
-
 /** An example database that the data source uses to retrieve data for the table. */
 export class ExampleHttpDatabase {
   constructor(private _httpClient: HttpClient) {}
 
-  getRepoIssues(sort: string, order: string, page: number): Observable<GithubApi> {
+  getRepoIssues(sort: string, order: string, page: number): Observable<any> {
     const href = 'https://api.github.com/search/issues';
     const requestUrl =
-        `${href}?q=repo:angular/components&sort=${sort}&order=${order}&page=${page + 1}`;
+        `http://localhost:8080/getFile?bucket=test-json-comparator&file=fakeResponse1.json`;
 
-    return this._httpClient.get<GithubApi>(requestUrl);
+    return this._httpClient.get(requestUrl);
   }
 }
-
-
-/**  Copyright 2019 Google LLC. All Rights Reserved.
-    Use of this source code is governed by an MIT-style license that
-    can be found in the LICENSE file at http://angular.io/license */

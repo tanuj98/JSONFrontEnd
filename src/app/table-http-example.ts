@@ -14,6 +14,7 @@ import {catchError, map, startWith, switchMap} from 'rxjs/operators';
   templateUrl: 'table-http-example.html',
 })
 export class TableHttpExample implements AfterViewInit {
+  
   //displayedColumns: string[] = ['created', 'state', 'number', 'title'];
   exampleDatabase: ExampleHttpDatabase | null;
   data: Object[] = [];
@@ -44,39 +45,17 @@ export class TableHttpExample implements AfterViewInit {
       this.columns = []
       console.log(Object.keys(data[0]))
       for (let entry of Object.keys(data[0])) {
-        this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
+        this.columns.push({columnDef: entry, header: entry,  cell: (element: any) => `${element[entry]}` })
       }
       this.displayedColumns = this.columns.map(x => x.columnDef);
       this.displayedColumns = Object.keys(data[0]);
       this.data = removeArraysFromObjs(data);
     })
     
-    // this.paginator.page
-    //   .pipe(
-    //     startWith({}),
-    //     switchMap(() => {
-    //       this.isLoadingResults = true;
-    //       return this.exampleDatabase!.getRepoIssues(
-    //         );
-    //     }),
-    //     map(data => {
-    //       // Flip flag to show that loading has finished.
-    //       this.isLoadingResults = false;
-    //       this.resultsLength = data.length;
-    //       this.columns = []
-    //       console.log(Object.keys(data[0]))
-    //       for (let entry of Object.keys(data[0])) {
-    //         this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
-    //       }
-    //       this.displayedColumns = this.columns.map(x => x.columnDef);
-    //       this.displayedColumns = Object.keys(data[0]);
-    //       return removeArraysFromObjs(data);
-    //     }),
-    //     catchError(() => {
-    //       this.isLoadingResults = false;
-    //       return observableOf([]);
-    //     })
-    //   ).subscribe(data => this.data = data);
+  }
+
+  applyFilter(filterValue: string) {
+    this.data.filter = filterValue.trim().toLowerCase();
   }
 }
 

@@ -21,7 +21,7 @@ export class TableHttpExample implements AfterViewInit {
   resultsLength = 0;
   isLoadingResults = true;
 
-  @ViewChild(MatPaginator, {static: false}) paginator: MatPaginator;
+  //@ViewChild(MatPaginator, {static: false}) paginator: MatPaginator;
   @ViewChild(MatSort, {static: false}) sort: MatSort;
   
   columns = [
@@ -36,39 +36,47 @@ export class TableHttpExample implements AfterViewInit {
   constructor(private _httpClient: HttpClient) {}
 
   ngAfterViewInit() {
+  
     this.exampleDatabase = new ExampleHttpDatabase(this._httpClient);
-
-    // If the user changes the sort order, reset back to the first page.
-    this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
-
-    merge(this.sort.sortChange, this.paginator.page)
-      .pipe(
-        startWith({}),
-        switchMap(() => {
-          this.isLoadingResults = true;
-          return this.exampleDatabase!.getRepoIssues(
-            this.sort.active, this.sort.direction, this.paginator.pageIndex);
-        }),
-        map(data => {
-          // Flip flag to show that loading has finished.
-          this.isLoadingResults = false;
-          this.resultsLength = data.length;
-          //this.displayedColumns = data[0].keys;
-          this.columns = []
-          console.log(Object.keys(data[0]))
-          for (let entry of Object.keys(data[0])) {
-            this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
-          }
-          console.log(this.columns)
-          this.displayedColumns = this.columns.map(x => x.columnDef);
-          this.displayedColumns = Object.keys(data[0]);
-          return removeArraysFromObjs(data);
-        }),
-        catchError(() => {
-          this.isLoadingResults = false;
-          return observableOf([]);
-        })
-      ).subscribe(data => this.data = data);
+    this.exampleDatabase.getRepoIssues().subscribe(data => {
+      this.isLoadingResults = false;
+      this.resultsLength = data.length;
+      this.columns = []
+      console.log(Object.keys(data[0]))
+      for (let entry of Object.keys(data[0])) {
+        this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
+      }
+      this.displayedColumns = this.columns.map(x => x.columnDef);
+      this.displayedColumns = Object.keys(data[0]);
+      this.data = removeArraysFromObjs(data);
+    })
+    
+    // this.paginator.page
+    //   .pipe(
+    //     startWith({}),
+    //     switchMap(() => {
+    //       this.isLoadingResults = true;
+    //       return this.exampleDatabase!.getRepoIssues(
+    //         );
+    //     }),
+    //     map(data => {
+    //       // Flip flag to show that loading has finished.
+    //       this.isLoadingResults = false;
+    //       this.resultsLength = data.length;
+    //       this.columns = []
+    //       console.log(Object.keys(data[0]))
+    //       for (let entry of Object.keys(data[0])) {
+    //         this.columns.push({columnDef: entry, header: entry,    cell: (element: any) => `${element[entry]}` })
+    //       }
+    //       this.displayedColumns = this.columns.map(x => x.columnDef);
+    //       this.displayedColumns = Object.keys(data[0]);
+    //       return removeArraysFromObjs(data);
+    //     }),
+    //     catchError(() => {
+    //       this.isLoadingResults = false;
+    //       return observableOf([]);
+    //     })
+    //   ).subscribe(data => this.data = data);
   }
 }
 
@@ -93,8 +101,7 @@ var removeArraysFromObj = function (obj) {
 /** An example database that the data source uses to retrieve data for the table. */
 export class ExampleHttpDatabase {
   constructor(private _httpClient: HttpClient) {}
-
-  getRepoIssues(sort: string, order: string, page: number): Observable<any> {
+  getRepoIssues(): Observable<any> {
     const href = 'https://api.github.com/search/issues';
     const requestUrl =
         `http://localhost:8080/getFile?bucket=test-json-comparator&file=fakeResponse1.json`;
